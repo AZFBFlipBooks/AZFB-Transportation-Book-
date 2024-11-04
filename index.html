@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flipbook Viewer</title>
 <style>
+ <style>
     /* Prevent body scroll */
     html, body {
         overflow: hidden;
@@ -41,9 +42,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: calc(100vh - 55px);
+        height: calc(100vh - 55px); /* Remove the margin-top and adjust height to stay under the navbar */
         perspective: 1000px;
-        margin-top: -90px;
+        overflow: hidden; /* Keep content within container */
+        position: relative;
     }
 
     #flipbook {
@@ -54,6 +56,7 @@
         justify-content: center;
         cursor: grab;
         user-select: none; /* Prevent text selection on drag */
+        transition: transform 0.1s ease; /* Smooth movement */
     }
 
     .page {
@@ -81,6 +84,15 @@
         position: relative;
         background: grey;
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+    .page img {
+        width: 100%; /* Make image fill the page width */
+        height: auto; /* Maintain aspect ratio */
+        max-height: 100%; /* Limit height to fit within container */
+        border-radius: 5px; /* Optional: rounded corners */
+         /* Subtle shadow for a lifted effect */
+        object-fit: contain; /* Ensure image fits neatly within bounds */
+        pointer-events: none; /* Prevent image from interfering with flipbook panning */
     }
 </style>
 </head>
@@ -111,7 +123,7 @@
                 </div>
                 <div class="page">
                     <img src="https://live.staticflickr.com/65535/54106009924_0e1d54cd99_o.png" alt="pg-5"  />
-                </div>  
+                </div>        
                 <div class="page">
                     <img src="https://live.staticflickr.com/65535/54104803907_fe8fe52720_o.png" alt="pg-7"  />
                 </div>
@@ -214,6 +226,7 @@
                     <div class="page">
                         <img src="https://live.staticflickr.com/65535/54105989750_bcceb69268_o.png"/>
                     </div>
+                
             </div>
         </div>
     </div>
@@ -274,16 +287,52 @@ function updateZoomPan() {
 zoomSlider.addEventListener('input', () => {
     zoomFactor = zoomSlider.value / 100;
     updateZoomPan();
+
+    // Reset position if zoom level is at or below 1x to center the content
+    if (zoomFactor <= 1) {
+        offsetX = 0;
+        offsetY = 0;
+        updateZoomPan();
+    }
 });
 
 let isPanning = false;
 let startX = 0;
 let startY = 0;
 
+// Start panning on mousedown only if zoomed in
+document.getElementById('flipbook').addEventListener('mousedown', (e) => {
+    if (zoomFactor > 1) {  // Only enable panning if zoomed in
+        if (e.target.closest('input[type="range"]')) return;
+        e.preventDefault();
+        isPanning = true;
+        startX = e.clientX - offsetX;
+        startY = e.clientY - offsetY;
+        document.getElementById('flipbook').style.cursor = 'grabbing';
+    }
+});
+
+// Update position while panning only if zoomed in
+document.addEventListener('mousemove', (e) => {
+    if (isPanning && zoomFactor > 1) {  // Only pan if zoomed in
+        offsetX = e.clientX - startX;
+        offsetY = e.clientY - startY;
+        updateZoomPan();
+    }
+});
+
+// Stop panning on mouseup
+document.addEventListener('mouseup', () => {
+    isPanning = false;
+    document.getElementById('flipbook').style.cursor = 'grab';
+});
 
 // Apply initial zoom and pan settings
 updateZoomPan();
-</script>
+
+
+    </script>
+    
 
 </body>
 </html>
